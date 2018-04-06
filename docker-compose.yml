@@ -1,0 +1,13 @@
+stinc:
+    image: ihciah/stinc
+    volumes:
+        - ./supervisor:/etc/supervisor
+        - ./tinc_conf:/etc/tinc
+        - ./dnsmasq.d:/etc/dnsmasq.d
+    restart: always
+    privileged: true
+    devices:
+        - "/dev/net/tun:/dev/net/tun"
+    ports:
+        - "50320:8388/tcp"
+        - "50320:8388/udp"
