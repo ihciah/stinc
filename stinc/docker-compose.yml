@@ -9,5 +9,5 @@ stinc:
     devices:
         - "/dev/net/tun:/dev/net/tun"
     ports:
-        - "50320:8388/tcp"
-        - "50320:8388/udp"
+        - "10086:8388/tcp"
+        - "10086:8388/udp"
