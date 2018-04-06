@@ -1,0 +1,54 @@
+#!/bin/bash
+
+VPN_NETWORK=192.168.111.0/24
+VPN_GATEWAY=192.168.111.1
+VPN_INTERFACE=twilight
+BYPASS_LAN=1
+ROUTE_TABLE=200
+MARK_VALUE=200
+BYPASS=('192.168.0.0/16')
+CHN_ROUTE=/etc/tinc/twilight/chnroute.txt
+SETNAME=chn_route
+
+/etc/tinc/twilight/stop_tinc_proxy
+
+echo "Loading ipset"
+
+/usr/sbin/ipset create $SETNAME hash:net
+while read line; do
+        /usr/sbin/ipset add $SETNAME $line;
+done < $CHN_ROUTE
+
+echo "ipset loaded"
+
+/usr/sbin/ipset add $SETNAME $VPN_NETWORK
+/usr/sbin/ipset add $SETNAME 127.0.0.1
+if [ $BYPASS_LAN -eq 1 ]; then
+        /usr/sbin/ipset add $SETNAME 10.0.0.0/8
+        /usr/sbin/ipset add $SETNAME 172.17.0.0/12
+        /usr/sbin/ipset add $SETNAME 192.168.0.0/16
+fi
+
+/sbin/ip route flush table $ROUTE_TABLE
+/sbin/ip route add default via $VPN_GATEWAY dev $VPN_INTERFACE table $ROUTE_TABLE
+/sbin/ip rule add fwmark $MARK_VALUE table $ROUTE_TABLE
+
+
+/sbin/iptables -t mangle -N tinc_proxy
+for bypass_addr in ${BYPASS[@]}; do
+        /sbin/iptables -t mangle -A tinc_proxy -d $bypass_addr -j RETURN
+done
+
+/sbin/iptables -t mangle -A tinc_proxy -m set --match-set $SETNAME dst -j RETURN
+/sbin/iptables -t mangle -A tinc_proxy -j CONNMARK --restore-mark
+/sbin/iptables -t mangle -A tinc_proxy -m mark --mark 0 -j MARK --set-mark $MARK_VALUE
+/sbin/iptables -t mangle -A tinc_proxy -j CONNMARK --save-mark
+
+/sbin/iptables -t mangle -I PREROUTING -j tinc_proxy
+/sbin/iptables -t mangle -I OUTPUT -j tinc_proxy
+
+/sbin/iptables -t nat -I POSTROUTING -o $VPN_INTERFACE -j MASQUERADE
+
+echo 2 > /proc/sys/net/ipv4/conf/twilight/rp_filter
+
+supervisorctl restart dnsmasq

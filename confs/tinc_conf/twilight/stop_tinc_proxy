@@ -1,0 +1,21 @@
+#!/bin/bash
+
+VPN_INTERFACE=twilight
+ROUTE_TABLE=200
+MARK_VALUE=200
+SETNAME=chn_route
+
+#Delete iptables rules
+/sbin/iptables -t mangle -D PREROUTING -j tinc_proxy
+/sbin/iptables -t mangle -D OUTPUT -j tinc_proxy
+/sbin/iptables -t mangle -F tinc_proxy
+/sbin/iptables -t mangle -X tinc_proxy
+
+/sbin/iptables -t nat -D POSTROUTING -o $VPN_INTERFACE -j MASQUERADE
+
+#Delete route table
+/sbin/ip rule del fwmark $MARK_VALUE table $ROUTE_TABLE
+/sbin/ip route flush table $ROUTE_TABLE
+
+#Delete CHN_ROUTE set
+/usr/sbin/ipset destroy $SETNAME

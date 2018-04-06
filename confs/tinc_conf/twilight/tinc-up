@@ -1,0 +1,7 @@
+#!/bin/sh
+/sbin/ip link set $INTERFACE up
+/sbin/ip addr add  192.168.111.101/32 dev $INTERFACE
+/sbin/ip route add 192.168.111.0/24 dev $INTERFACE
+
+/etc/tinc/twilight/init_tinc_proxy > /tmp/twilight.log
+
