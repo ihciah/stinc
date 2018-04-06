@@ -1,9 +1,9 @@
 stinc:
     image: ihciah/stinc
     volumes:
-        - ./supervisor:/etc/supervisor
-        - ./tinc_conf:/etc/tinc
-        - ./dnsmasq.d:/etc/dnsmasq.d
+        - ./supervisor:/etc/supervisor:ro
+        - ./tinc_conf:/etc/tinc:ro
+        - ./dnsmasq.d:/etc/dnsmasq.d:ro
     restart: always
     privileged: true
     devices:
