@@ -51,4 +51,6 @@ done
 
 echo 2 > /proc/sys/net/ipv4/conf/twilight/rp_filter
 
+supervisorctl start chinadns
 supervisorctl restart dnsmasq
+supervisorctl start ss

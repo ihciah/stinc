@@ -1,10 +1,10 @@
 FROM alpine
 MAINTAINER ihciah
 
-ENV SS_VER 3.1.3
-ENV SS_URL https://github.com/shadowsocks/shadowsocks-libev/archive/v$SS_VER.tar.gz
-ENV SS_DIR shadowsocks-libev-$SS_VER
+ENV SS_URL https://github.com/shadowsocks/shadowsocks-libev/archive/v3.1.3.tar.gz
+ENV SS_DIR shadowsocks-libev-3.1.3
 ENV KCP_URL https://github.com/xtaci/kcptun/releases/download/v20180316/kcptun-linux-amd64-20180316.tar.gz
+ENV CHINADNS_URL https://github.com/shadowsocks/ChinaDNS/releases/download/1.3.2/chinadns-1.3.2.tar.gz
 
 RUN set -ex \
     && apk add --no-cache c-ares \
@@ -34,6 +34,11 @@ RUN set -ex \
                              openssl-dev \
                              pcre-dev \
                              tar \
+                             musl-dev \
+                             gcc \
+                             gawk \
+                             make \
+                             libtool \
     && curl -sSL $SS_URL | tar xz \
     && cd $SS_DIR \
         && curl -sSL https://github.com/shadowsocks/ipset/archive/shadowsocks.tar.gz | tar xz --strip 1 -C libipset \
@@ -44,12 +49,14 @@ RUN set -ex \
         && make install \
         && cd .. \
         && rm -rf $SS_DIR \
-    && mkdir /kcp \
+    && mkdir /kcp && mkdir /chinadns \
     && curl -sSL $KCP_URL | tar xz -C /kcp client_linux_amd64 \
+    && curl -sSL $CHINADNS_URL | tar xz --strip 1 -C /chinadns \
+    && cd /chinadns && ./configure && make && make install && cd / && rm -rf /chinadns \
     && echo "no-resolv" > /etc/dnsmasq.conf \
     && echo "listen-address=127.0.0.1" >> /etc/dnsmasq.conf \
     && echo "conf-dir=/etc/dnsmasq.d/,*.conf" >> /etc/dnsmasq.conf \
-    && echo "server=101.6.6.6" >> /etc/dnsmasq.conf \
+    && echo "server=127.0.0.1#5353" >> /etc/dnsmasq.conf \
     && apk del TMP
 
 
